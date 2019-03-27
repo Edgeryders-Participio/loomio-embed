@@ -1,11 +1,13 @@
 module Loomio exposing (..)
 
 import Json.Decode as Json exposing (field, at, string, int, list, map, map2, map3, map4, andThen, fail, succeed)
-import Html exposing (Html, text, li, ul)
-import Html.Attributes exposing (class)
+import Html exposing (Html, text, li, ul, img, div, span)
+import Html.Attributes exposing (class, src, style)
 import List exposing (head, filter)
 import Dict exposing (Dict)
 import Tuple
+
+import Markdown
 
 type alias User =
     { name : String
@@ -32,7 +34,6 @@ decodeDiscussion =
     map2 DiscussionInfo
         (field "id" int)
         (field "items_count" int)
-
 
 decodeComments : Json.Decoder (List Comment)
 decodeComments =
@@ -75,8 +76,19 @@ viewComments cs =
 
 viewComment : Comment -> Html msg
 viewComment c =
-    li [ class "list-group-item" ] [ viewUser c.user ]
+    li [ class "list-group-item" ]
+        [ viewUser c.user
+        , Markdown.toHtml [] c.body
+        ]
 
 viewUser : User -> Html msg
-viewUser u = text ""
+viewUser u = div [ style "margin-bottom" "15px" ]
+             [ img [ src <| Maybe.withDefault "https://partycity6.scene7.com/is/image/PartyCity/_pdp_sq_?$_1000x1000_$&$product=PartyCity/176114" u.avatarUrls
+                   , (style "border-radius" "50% 50% 50% 50%")
+                   , (style "width" "50px")
+                   , (style "height" "50px")
+                   , (style "margin-right" "20px")
+                   ] []
+             , span [ style "font-weight" "bold" ] [ text u.name ]
+             ]
 

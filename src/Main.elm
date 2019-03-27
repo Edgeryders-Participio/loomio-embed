@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (Html, text)
+import Html.Attributes as Attrs
 import Http
 
 import Json.Decode as Json
@@ -10,6 +11,14 @@ import Url
 
 import Loomio
 
+-- TODO
+-- Make pretty
+-- Fix avatars (gravatar / url)
+
+-- Construct URL
+-- Get element attributes
+-- Link to comment field in loomio
+-- Match @username and make <strong>
 
 type Msg
     = GotComments (Result Http.Error (List Loomio.Comment))
@@ -38,7 +47,10 @@ init flags =
 
 view : Model -> Html Msg
 view model =
-    text (Debug.toString model)
+    Html.div []
+        [ Html.node "link" [ Attrs.rel "stylesheet", Attrs.href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" ] [] -- for testing
+        , Loomio.viewComments model
+        ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
