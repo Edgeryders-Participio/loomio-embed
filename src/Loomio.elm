@@ -1,9 +1,12 @@
 module Loomio exposing (..)
 
-import Json.Decode as Json exposing (field, at, string, int, list, map2, map3, map4, andThen, fail, succeed)
-import Html exposing (Html, text)
+import Json.Decode as Json exposing (field, at, string, int, list, map, map2, map3, map4, andThen, fail, succeed)
+import Html exposing (Html, text, li, ul)
+import Html.Attributes exposing (class)
 import List exposing (head, filter)
 import Dict exposing (Dict)
+import Tuple
+
 type alias User =
     { name : String
     , username : String
@@ -30,6 +33,11 @@ decodeDiscussion =
         (field "id" int)
         (field "items_count" int)
 
+
+decodeComments : Json.Decoder (List Comment)
+decodeComments =
+    decodeUsers |> andThen (\u -> list (decodeComment u))
+
 decodeComment : UserDict -> Json.Decoder Comment
 decodeComment users =
     map4 Comment
@@ -45,6 +53,13 @@ decodeComment users =
                                     succeed u
                        ))
 
+decodeUsers : Json.Decoder UserDict
+decodeUsers =
+    map2
+    Tuple.pair
+        (field "id" int) decodeUser
+        |> list |> map Dict.fromList
+
 decodeUser : Json.Decoder User
 decodeUser =
     map3 User
@@ -52,8 +67,14 @@ decodeUser =
         (field "username" string)
         (at ["avatar_url", "large"] string)
 
-viewComment : Comment -> Html msg
-viewComment _ =
-    text ""
+viewComments : List Comment -> Html msg
+viewComments cs =
+    ul [ class "list-group" ] <| List.map viewComment cs
 
+viewComment : Comment -> Html msg
+viewComment c =
+    li [ class "list-group-item" ] [ viewUser c.user ]
+
+viewUser : User -> Html msg
+viewUser u = text ""
 

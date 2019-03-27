@@ -12,20 +12,20 @@ import Loomio
 
 
 type Msg
-    = SetComments Model
+    = GotComments (Result Http.Error (List Loomio.Comment))
     | GotDiscussion (Result Http.Error Loomio.DiscussionInfo)
     | NoOp
 
 type alias Model = List Loomio.Comment
 
-discussionUrl : String -> Url.Url
-
+-- discussionUrl : String -> Url.Url
+-- "https://talk.theborderland.se/api/v1/events?from=-10&per=20&order=sequence_id&discussion_id=965"
 
 init : flags -> (Model, Cmd Msg)
 init flags =
     ([]
     , Http.get
-        { url = "https://talk.theborderland.se/api/v1/discussions/6HMxK2ve" -- from element
+        { url = "http://talk.theborderland.se/api/v1/discussions/6HMxK2ve" -- from element
         , expect =
             Http.expectJson
                 GotDiscussion
@@ -45,23 +45,16 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotDiscussion result ->
-            case result of 
+            case result of
                 Ok discussionInfo ->
-                    let
-                        _ = Debug.log "discussion" discussionInfo
-                    in
-                        ( model
-                        , Cmd.none )
+                    (model, Http.get
+                         { url = "http://talk.theborderland.se/api/v1/events?from=-10&per=20&order=sequence_id&discussion_id=965"
+                         , expect = Http.expectJson GotComments Loomio.decodeComments
+                         })
                 _ ->
                     ( model, Cmd.none )
-    
-            -- (model, Http.get
-            --     { url = "https://talk.theborderland.se/api/v1/events?from=-10&per=20&order=sequence_id&discussion_id=965"
-            --     , expect = Http.expectJson SetComments Loomio.decodeComments
-            --     })
-        SetComments newModel ->
-            ( newModel, Cmd.none )
-
+        GotComments newModel ->
+                ( Result.withDefault model newModel, Cmd.none )
         NoOp ->
             ( model, Cmd.none )
 
