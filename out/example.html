@@ -1,0 +1,18 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" />
+        <script src="loomio-embed.min.js"></script>
+    </head>
+    <body>
+        <div loomio-thread="6HMxK2ve"></div>
+        <script>
+         document.querySelectorAll("loomio-thread").forEach(function(el) {
+             Elm.Main.init({ // TODO rename module from main
+                 node: el,
+                 flags: { endpoint: "https://talk.theborderland.se"
+                        , discussionId: el.getAttribute('loomio-thread') }
+             });
+         });
+        </script>
+    </body>
+</html>
