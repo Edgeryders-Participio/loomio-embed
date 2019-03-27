@@ -10,7 +10,7 @@ import Tuple
 type alias User =
     { name : String
     , username : String
-    , avatarUrls : String
+    , avatarUrls : Maybe String
     }
 
 type alias Comment =
@@ -36,7 +36,8 @@ decodeDiscussion =
 
 decodeComments : Json.Decoder (List Comment)
 decodeComments =
-    decodeUsers |> andThen (\u -> list (decodeComment u))
+    (field "users" decodeUsers)
+    |> andThen (\u -> field "comments" <| list (decodeComment u))
 
 decodeComment : UserDict -> Json.Decoder Comment
 decodeComment users =
@@ -65,7 +66,8 @@ decodeUser =
     map3 User
         (field "name" string)
         (field "username" string)
-        (at ["avatar_url", "large"] string)
+        (succeed Nothing)
+        --(at ["avatar_url", "large"] string)
 
 viewComments : List Comment -> Html msg
 viewComments cs =

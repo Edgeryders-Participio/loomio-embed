@@ -53,8 +53,8 @@ update msg model =
                          })
                 _ ->
                     ( model, Cmd.none )
-        GotComments newModel ->
-                ( Result.withDefault model newModel, Cmd.none )
+        GotComments result ->
+                (  Result.withDefault model (result |> Result.mapError (Debug.log "asd")), Cmd.none )
         NoOp ->
             ( model, Cmd.none )
 
