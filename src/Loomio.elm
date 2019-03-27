@@ -6,11 +6,12 @@ import Html.Attributes exposing (class)
 import List exposing (head, filter)
 import Dict exposing (Dict)
 import Tuple
+import Url
 
 type alias User =
     { name : String
     , username : String
-    , avatarUrls : Maybe String
+    , avatarUrls : Maybe (Url.Url, Url.Url, Url.Url)
     }
 
 type alias Comment =
@@ -54,6 +55,18 @@ decodeComment users =
                                     succeed u
                        ))
 
+decodeAvatarUrls : Json.Decoder (Maybe (Url.Url, Url.Url, Url.Url))
+decodeAvatarUrls =
+    let
+        triple a b c = (a, b, c)
+        urlString = map Url.fromString string
+    in  
+        map3 triple
+            (field "small" urlString)
+            (field "medium" urlString)
+            (field "large" urlString)
+        |> map (\(s, m, l) -> Maybe.map3 triple s m l)
+
 decodeUsers : Json.Decoder UserDict
 decodeUsers =
     map2
@@ -66,8 +79,14 @@ decodeUser =
     map3 User
         (field "name" string)
         (field "username" string)
-        (succeed Nothing)
-        --(at ["avatar_url", "large"] string)
+        (field "avatar_kind" string
+            |> andThen (\kind ->
+                case kind of
+                    "uploaded" ->
+                        decodeAvatarUrls
+                    _ ->
+                        succeed Nothing)
+        )
 
 viewComments : List Comment -> Html msg
 viewComments cs =
