@@ -8,18 +8,20 @@ import Loomio
 
 
 type Msg
-    = SetDiscussion Model
+    = SetComments Model
+    | GetComments Model Discussion
     | NoOp
 
-type alias Model = Loomio.Discussion
+type alias Model = List Loomio.Comment
 
 init : flags -> (Model, Cmd msg)
 init flags =
     ({}
     , Http.get
-        { url = "jkhasd"
-        , expect = Http.expectJson SetDiscussion Loomio.decodeDiscussion
+        { url = "https://talk.theborderland.se/api/v1/discussions/6HMxK2ve" -- from element
+        , expect = Http.expectJson GetComments Loomio.decodeDiscussion
         })
+
 
 view : Model -> Html Msg
 view model =
@@ -29,7 +31,12 @@ view model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        SetDiscussion newModel ->
+        GetComments discussion ->
+            (model, Http.get
+                { url = "https://talk.theborderland.se/api/v1/events?from=-10&per=20&order=sequence_id&discussion_id=965"
+                , expect = Http.expectJson SetComments Loomio.decodeComments
+                })
+        SetComments newModel ->
             ( newModel, Cmd.none )
 
         NoOp ->
