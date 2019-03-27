@@ -7,6 +7,7 @@ import List exposing (head, filter)
 import Dict exposing (Dict)
 import Tuple
 import Url
+import Url.Builder
 
 import Markdown
 
@@ -48,6 +49,29 @@ userAvatar sz user =
                 l
     )
 
+type Collection
+    = Discussions
+    | Events
+
+apiUrl : Url.Url -> Collection -> Maybe String -> (List Url.Builder.QueryParameter) -> Url.Url
+apiUrl base collection id params =
+    let
+        collectionName =
+            case collection of
+                Discussions ->
+                    "discussions"
+                Events ->
+                    "events"
+        collectionId =
+            id
+            |> Maybe.map (String.append "/")
+            |> Maybe.withDefault ""
+    in
+    
+    { base
+        | path = "/api/v1/" ++ collectionName ++ collectionId
+        , query = Just <| Url.Builder.toQuery params }
+
 decodeDiscussion : Json.Decoder DiscussionInfo
 decodeDiscussion =
     map2 DiscussionInfo
@@ -74,8 +98,8 @@ decodeComment users =
                                     succeed u
                        ))
 
-decodeAvatarUrls : Url.Url -> Json.Decoder (Maybe (Url.Url, Url.Url, Url.Url))
-decodeAvatarUrls baseUrl =
+decodeUploadedAvatarUrls : Url.Url -> Json.Decoder (Maybe (Url.Url, Url.Url, Url.Url))
+decodeUploadedAvatarUrls baseUrl =
     let
         triple a b c = (a, b, c)
         urlPathString = map (\p -> Just { baseUrl | path = p }) string
@@ -90,6 +114,30 @@ decodeAvatarUrls baseUrl =
             in
                 Maybe.map3 triple s m l
         )
+
+gravatarUrls : String -> (Url.Url, Url.Url, Url.Url)
+gravatarUrls emailHash =
+    let
+        size s =
+            case s of
+                Small ->
+                    80
+                Medium ->
+                    120
+                Large ->
+                    200
+
+        url s =
+            { protocol = Url.Https
+            , host = "www.gravatar.com"
+            , port_ = Nothing
+            , path = "/avatar/" ++ emailHash
+            , query = Just <| Url.Builder.toQuery [ Url.Builder.int "s" (size s) ]
+            , fragment = Nothing
+            }
+    in
+        (url Small, url Medium, url Large)
+
 
 decodeUsers : Url.Url -> Json.Decoder UserDict
 decodeUsers baseUrl =
@@ -107,7 +155,9 @@ decodeUser baseUrl =
             |> andThen (\kind ->
                 case kind of
                     "uploaded" ->
-                        field "avatar_url" (decodeAvatarUrls baseUrl)
+                        field "avatar_url" (decodeUploadedAvatarUrls baseUrl)
+                    "gravatar" ->
+                        field "email_hash" (string |> map gravatarUrls |> map Just)
                     _ ->
                         succeed Nothing)
         )
