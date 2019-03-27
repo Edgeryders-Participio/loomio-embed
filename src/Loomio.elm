@@ -30,15 +30,33 @@ type alias DiscussionInfo =
 
 type alias UserDict = Dict Int User
 
+type AvatarSize
+    = Small
+    | Medium
+    | Large
+
+userAvatar : AvatarSize -> User -> Maybe Url.Url
+userAvatar sz user =
+    user.avatarUrls
+    |> Maybe.map (\(s, m, l) ->
+        case sz of
+            Small ->
+                s
+            Medium ->
+                m
+            Large ->
+                l
+    )
+
 decodeDiscussion : Json.Decoder DiscussionInfo
 decodeDiscussion =
     map2 DiscussionInfo
         (field "id" int)
         (field "items_count" int)
 
-decodeComments : Json.Decoder (List Comment)
-decodeComments =
-    (field "users" decodeUsers)
+decodeComments : Url.Url -> Json.Decoder (List Comment)
+decodeComments baseUrl =
+    (field "users" (decodeUsers baseUrl))
     |> andThen (\u -> field "comments" <| list (decodeComment u))
 
 decodeComment : UserDict -> Json.Decoder Comment
@@ -56,27 +74,32 @@ decodeComment users =
                                     succeed u
                        ))
 
-decodeAvatarUrls : Json.Decoder (Maybe (Url.Url, Url.Url, Url.Url))
-decodeAvatarUrls =
+decodeAvatarUrls : Url.Url -> Json.Decoder (Maybe (Url.Url, Url.Url, Url.Url))
+decodeAvatarUrls baseUrl =
     let
         triple a b c = (a, b, c)
-        urlString = map Url.fromString string
+        urlPathString = map (\p -> Just { baseUrl | path = p }) string
     in  
         map3 triple
-            (field "small" urlString)
-            (field "medium" urlString)
-            (field "large" urlString)
-        |> map (\(s, m, l) -> Maybe.map3 triple s m l)
+            (field "small" urlPathString)
+            (field "medium" urlPathString)
+            (field "large" urlPathString)
+        |> map (\(s, m, l) ->
+            let
+                _ = Debug.log "te" (triple s m l)
+            in
+                Maybe.map3 triple s m l
+        )
 
-decodeUsers : Json.Decoder UserDict
-decodeUsers =
+decodeUsers : Url.Url -> Json.Decoder UserDict
+decodeUsers baseUrl =
     map2
     Tuple.pair
-        (field "id" int) decodeUser
+        (field "id" int) (decodeUser baseUrl)
         |> list |> map Dict.fromList
 
-decodeUser : Json.Decoder User
-decodeUser =
+decodeUser : Url.Url -> Json.Decoder User
+decodeUser baseUrl =
     map3 User
         (field "name" string)
         (field "username" string)
@@ -84,7 +107,7 @@ decodeUser =
             |> andThen (\kind ->
                 case kind of
                     "uploaded" ->
-                        decodeAvatarUrls
+                        field "avatar_url" (decodeAvatarUrls baseUrl)
                     _ ->
                         succeed Nothing)
         )
@@ -102,12 +125,18 @@ viewComment c =
 
 viewUser : User -> Html msg
 viewUser u = div [ style "margin-bottom" "15px" ]
-             [ img [ src <| Maybe.withDefault "https://partycity6.scene7.com/is/image/PartyCity/_pdp_sq_?$_1000x1000_$&$product=PartyCity/176114" u.avatarUrls
-                   , (style "border-radius" "50% 50% 50% 50%")
-                   , (style "width" "50px")
-                   , (style "height" "50px")
-                   , (style "margin-right" "20px")
-                   ] []
+             [ img
+                [ src
+                    (userAvatar Medium (Debug.log "asd" u)
+                        |> Maybe.map Url.toString
+                        |> Maybe.withDefault "https://partycity6.scene7.com/is/image/PartyCity/_pdp_sq_?$_1000x1000_$&$product=PartyCity/176114"
+                    )
+                , (style "border-radius" "50% 50% 50% 50%")
+                , (style "width" "50px")
+                , (style "height" "50px")
+                , (style "margin-right" "20px")
+                ]
+                []
              , span [ style "font-weight" "bold" ] [ text u.name ]
              ]
 
