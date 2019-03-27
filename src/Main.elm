@@ -20,6 +20,15 @@ import Loomio
 -- Link to comment field in loomio
 -- Match @username and make <strong>
 
+baseUrl =
+    { protocol = Url.Protocol.Http
+    , host = "talk.theborderland.se"
+    , port_ = Nothing
+    , path = "/"
+    , query = Nothing
+    , fragment = Nothing
+    }
+
 type Msg
     = GotComments (Result Http.Error (List Loomio.Comment))
     | GotDiscussion (Result Http.Error Loomio.DiscussionInfo)
@@ -61,7 +70,7 @@ update msg model =
                 Ok discussionInfo ->
                     (model, Http.get
                          { url = "http://talk.theborderland.se/api/v1/events?from=-10&per=20&order=sequence_id&discussion_id=965"
-                         , expect = Http.expectJson GotComments Loomio.decodeComments
+                         , expect = Http.expectJson GotComments (Loomio.decodeComments baseUrl)
                          })
                 _ ->
                     ( model, Cmd.none )
