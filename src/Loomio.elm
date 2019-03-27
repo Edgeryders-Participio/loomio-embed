@@ -91,7 +91,7 @@ decodeUser =
 
 viewComments : List Comment -> Html msg
 viewComments cs =
-    ul [ class "list-group" ] <| List.map viewComment cs
+    ul [ class "list-group" ] <| List.map viewComment (List.reverse cs)
 
 viewComment : Comment -> Html msg
 viewComment c =
