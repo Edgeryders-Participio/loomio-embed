@@ -70,7 +70,7 @@ apiUrl base collection id params =
     
     { base
         | path = "/api/v1/" ++ collectionName ++ collectionId
-        , query = Just <| Url.Builder.toQuery params }
+        , query = Just <| String.dropLeft 1 <| Url.Builder.toQuery params }
 
 decodeDiscussion : Json.Decoder DiscussionInfo
 decodeDiscussion =
@@ -118,18 +118,18 @@ gravatarUrls emailHash =
         size s =
             case s of
                 Small ->
-                    80
+                    30
                 Medium ->
-                    120
+                    50
                 Large ->
-                    200
+                    170
 
         url s =
             { protocol = Url.Https
             , host = "www.gravatar.com"
             , port_ = Nothing
             , path = "/avatar/" ++ emailHash
-            , query = Just <| Url.Builder.toQuery [ Url.Builder.int "s" (size s) ]
+            , query = Just <| String.dropLeft 1 <| Url.Builder.toQuery [ Url.Builder.int "s" (size s) ]
             , fragment = Nothing
             }
     in
@@ -179,8 +179,6 @@ viewUser u = div [ style "margin-bottom" "15px" ]
                         |> Maybe.withDefault "https://partycity6.scene7.com/is/image/PartyCity/_pdp_sq_?$_1000x1000_$&$product=PartyCity/176114"
                     )
                 , (style "border-radius" "50% 50% 50% 50%")
-                , (style "width" "50px")
-                , (style "height" "50px")
                 , (style "margin-right" "20px")
                 ]
                 []
