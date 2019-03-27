@@ -6,11 +6,11 @@
     <body>
         <div loomio-thread="6HMxK2ve"></div>
         <script>
-         document.querySelectorAll("loomio-thread").forEach(function(el) {
+         document.querySelectorAll("[loomio-thread]").forEach(function(el) {
              Elm.Main.init({ // TODO rename module from main
                  node: el,
                  flags: { endpoint: "https://talk.theborderland.se"
-                        , discussionId: el.getAttribute('loomio-thread') }
+                        , discussionKey: el.getAttribute('loomio-thread') }
              });
          });
         </script>

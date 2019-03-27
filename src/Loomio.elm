@@ -109,10 +109,7 @@ decodeUploadedAvatarUrls baseUrl =
             (field "medium" urlPathString)
             (field "large" urlPathString)
         |> map (\(s, m, l) ->
-            let
-                _ = Debug.log "te" (triple s m l)
-            in
-                Maybe.map3 triple s m l
+            Maybe.map3 triple s m l
         )
 
 gravatarUrls : String -> (Url.Url, Url.Url, Url.Url)
@@ -177,7 +174,7 @@ viewUser : User -> Html msg
 viewUser u = div [ style "margin-bottom" "15px" ]
              [ img
                 [ src
-                    (userAvatar Medium (Debug.log "asd" u)
+                    (userAvatar Medium u
                         |> Maybe.map Url.toString
                         |> Maybe.withDefault "https://partycity6.scene7.com/is/image/PartyCity/_pdp_sq_?$_1000x1000_$&$product=PartyCity/176114"
                     )
