@@ -1,14 +1,16 @@
 module Main exposing (..)
 
 import Browser
-import Html exposing (Html, text)
-import Html.Attributes as Attrs
+import Html exposing (Html, text, li, ul, img, div, span)
+import Html.Attributes exposing (class, src, style, rel, href)
 import Http
 
 import Json.Decode as Json
 
 import Url
 import Url.Builder as UB
+
+import Markdown
 
 import Loomio
 
@@ -86,13 +88,60 @@ init flags =
         )
 
 
+viewComments : State -> List Loomio.Comment -> Html msg
+viewComments model cs =
+    ul [ class "list-group" ] <| (cs |> List.reverse |> List.map (viewComment model))
+
+viewComment : State -> Loomio.Comment -> Html msg
+viewComment model c =
+    li [ class "list-group-item" ]
+        [ viewUser model c.user
+        , Markdown.toHtml [] c.body
+        ]
+
+viewUser : State -> Loomio.User -> Html msg
+viewUser model u =
+    let
+        wantedAvatar = Loomio.userAvatarUrl Loomio.Medium u |> Maybe.map Url.toString
+        avatarSize = String.append (Loomio.avatarPixelSize Loomio.Medium |> String.fromInt) "px"
+        
+        avatarTag =
+            case wantedAvatar of
+                Just url ->
+                    img
+                        [ src url
+                        , style "border-radius" "50% 50% 50% 50%"
+                        , style "margin-right" "20px"
+                        ]
+                        []
+                Nothing ->
+                    div
+                        [ style "width" avatarSize
+                        , style "height" avatarSize
+                        , style "margin-right" "20px"
+                        , style "border" "1px solid gray"
+                        , style "border-radius" "50%"
+                        , style "display" "inline-block"
+                        , style "vertical-align" "middle"
+                        ]
+                        []
+                    
+    in
+        div [ style "margin-bottom" "15px" ]
+            [ avatarTag
+            , span [ style "font-weight" "bold" ] [ text u.name ]
+            ]
+
+
+
+
 view : Model -> Html Msg
 view model =
     case model of
         Just m ->
             Html.div []
-                [ Html.node "link" [ Attrs.rel "stylesheet", Attrs.href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" ] [] -- for testing
-                , Loomio.viewComments m.comments
+                [ Html.node "link" [ rel "stylesheet", href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" ] [] -- for testing
+                , viewComments m m.comments
                 ]
         Nothing ->
             Html.div [] [text "couldn't fetch comments"]
@@ -114,7 +163,7 @@ update msg model =
                             |> Url.toString
                          , expect = Http.expectJson GotComments (Loomio.decodeComments m.baseUrl)
                          })
-                _ ->
+                Err s ->
                     ( model, Cmd.none )
 
         (GotComments result, Just m) ->

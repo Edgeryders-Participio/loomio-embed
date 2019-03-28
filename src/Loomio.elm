@@ -1,19 +1,15 @@
 module Loomio exposing (..)
 
-import Json.Decode as Json exposing (field, at, string, int, list, map, map2, map3, map4, andThen, fail, succeed)
-import Html exposing (Html, text, li, ul, img, div, span)
-import Html.Attributes exposing (class, src, style)
+import Json.Decode as Json exposing (field, at, string, int, list, map, map2, map3, map4, andThen, fail, succeed, maybe)
 import List exposing (head, filter)
 import Dict exposing (Dict)
 import Tuple
 import Url
 import Url.Builder
 
-import Markdown
-
 type alias User =
     { name : String
-    , username : String
+    , username : Maybe String
     , avatarUrls : Maybe (Url.Url, Url.Url, Url.Url)
     }
 
@@ -36,8 +32,17 @@ type AvatarSize
     | Medium
     | Large
 
-userAvatar : AvatarSize -> User -> Maybe Url.Url
-userAvatar sz user =
+avatarPixelSize s =
+    case s of
+        Small ->
+            30
+        Medium ->
+            50
+        Large ->
+            170
+
+userAvatarUrl : AvatarSize -> User -> Maybe Url.Url
+userAvatarUrl sz user =
     user.avatarUrls
     |> Maybe.map (\(s, m, l) ->
         case sz of
@@ -115,21 +120,12 @@ decodeUploadedAvatarUrls baseUrl =
 gravatarUrls : String -> (Url.Url, Url.Url, Url.Url)
 gravatarUrls emailHash =
     let
-        size s =
-            case s of
-                Small ->
-                    30
-                Medium ->
-                    50
-                Large ->
-                    170
-
         url s =
             { protocol = Url.Https
             , host = "www.gravatar.com"
             , port_ = Nothing
             , path = "/avatar/" ++ emailHash
-            , query = Just <| String.dropLeft 1 <| Url.Builder.toQuery [ Url.Builder.int "s" (size s) ]
+            , query = Just <| String.dropLeft 1 <| Url.Builder.toQuery [ Url.Builder.int "s" (avatarPixelSize s) ]
             , fragment = Nothing
             }
     in
@@ -147,7 +143,7 @@ decodeUser : Url.Url -> Json.Decoder User
 decodeUser baseUrl =
     map3 User
         (field "name" string)
-        (field "username" string)
+        (field "username" (maybe string))
         (field "avatar_kind" string
             |> andThen (\kind ->
                 case kind of
@@ -158,30 +154,3 @@ decodeUser baseUrl =
                     _ ->
                         succeed Nothing)
         )
-
-viewComments : List Comment -> Html msg
-viewComments cs =
-    ul [ class "list-group" ] <| List.map viewComment (List.reverse cs)
-
-viewComment : Comment -> Html msg
-viewComment c =
-    li [ class "list-group-item" ]
-        [ viewUser c.user
-        , Markdown.toHtml [] c.body
-        ]
-
-viewUser : User -> Html msg
-viewUser u = div [ style "margin-bottom" "15px" ]
-             [ img
-                [ src
-                    (userAvatar Medium u
-                        |> Maybe.map Url.toString
-                        |> Maybe.withDefault "https://partycity6.scene7.com/is/image/PartyCity/_pdp_sq_?$_1000x1000_$&$product=PartyCity/176114"
-                    )
-                , (style "border-radius" "50% 50% 50% 50%")
-                , (style "margin-right" "20px")
-                ]
-                []
-             , span [ style "font-weight" "bold" ] [ text u.name ]
-             ]
-
