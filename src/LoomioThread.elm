@@ -1,4 +1,4 @@
-module Main exposing (Model, Msg(..), State, init, initialModelDecoder, main, subscriptions, update, view, viewComment, viewComments, viewUser)
+port module LoomioThread exposing (Model, Msg(..), State, init, initialModelDecoder, main, subscriptions, update, view, viewComment, viewComments, viewUser)
 
 import Browser
 import Html exposing (Html, div, img, li, span, text, ul)
@@ -11,18 +11,12 @@ import Url
 import Url.Builder as UB
 
 
-
--- TODO
--- Make pretty
--- Fix avatars (gravatar / url)
--- Construct URL
--- Get element attributes
--- Link to comment field in loomio
--- Match @username and make <strong>
+port fetch : (Json.Value -> msg) -> Sub msg
 
 
 type Msg
-    = GotComments (Result Http.Error (List Loomio.Comment))
+    = Fetch Json.Value
+    | GotComments (Result Http.Error (List Loomio.Comment))
     | GotDiscussion (Result Http.Error Loomio.DiscussionInfo)
     | NoOp
 
@@ -36,11 +30,6 @@ type alias State =
 
 type alias Model =
     Maybe State
-
-
-
--- discussionUrl : String -> Url.Url
--- "https://talk.theborderland.se/api/v1/events?from=-10&per=20&order=sequence_id&discussion_id=965"
 
 
 initialModelDecoder =
@@ -168,6 +157,9 @@ view model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case ( msg, model ) of
+        ( Fetch value, _ ) ->
+            init value
+
         ( GotDiscussion result, Just m ) ->
             case result of
                 Ok discussionInfo ->
@@ -196,7 +188,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    fetch Fetch
 
 
 main : Program Json.Value Model Msg
