@@ -157,8 +157,8 @@ view model =
     case model of
         Just m ->
             Html.div []
-                [ Html.node "link" [ rel "stylesheet", href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" ] [] -- for testing
-                , viewComments m m.comments
+                [ -- Html.node "link" [ rel "stylesheet", href "https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" ] [] -- for reactor
+                viewComments m m.comments
                 ]
 
         Nothing ->
