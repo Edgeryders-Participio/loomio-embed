@@ -170,7 +170,7 @@ update msg model =
                                 m.baseUrl
                                 Loomio.Events
                                 Nothing
-                                [ UB.int "from" -10, UB.int "per" 20, UB.string "order" "sequence_id", UB.int "discussion_id" discussionInfo.id ]
+                                [ UB.int "from" -10, UB.string "order" "sequence_id", UB.int "discussion_id" discussionInfo.id ]
                                 |> Url.toString
                         , expect = Http.expectJson GotComments (Loomio.decodeComments m.baseUrl)
                         }
